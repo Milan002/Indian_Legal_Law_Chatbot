@@ -28,11 +28,12 @@ DISCLAIMER = """
 # --- Utility Functions ---
 def get_gemini_response(messages: List[Dict], legal_domain: str) -> str:
     """
-    Integrates with Gemini 2.0 Flash API to fetch responses.
+    Integrates with Gemini 2.0 Flash API to fetch responses, now using the selected legal domain.
     """
+    domain_text = f" ({legal_domain})" if legal_domain and legal_domain != "All Laws" else ""
     system_prompt = (
-        "You are a knowledgeable and precise Indian legal assistant. "
-        "Provide concise answers based on Indian law (IPC, CrPC, Civil Law, etc.). "
+        f"You are a knowledgeable and precise Indian legal assistant. "
+        f"Provide concise answers based on Indian law{domain_text}. "
         "If the law is unclear, say 'Please consult a certified lawyer for this specific case.' "
         "Do not fabricate any legal rules."
     )
@@ -47,20 +48,52 @@ def get_gemini_response(messages: List[Dict], legal_domain: str) -> str:
 
 # --- Streamlit UI ---
 st.set_page_config(page_title="Indian Legal Law Chatbot", page_icon="⚖️", layout="centered")
-st.title("⚖️ Indian Legal Law Chatbot")
 
-# Sidebar: Legal Domain Selection
-st.sidebar.header("Select Legal Domain")
-selected_domain = st.sidebar.selectbox("Domain", LEGAL_DOMAINS)
-
-# Sidebar: Keyword Suggestions (Optional)
-st.sidebar.markdown("**Keyword Suggestions:**")
-st.sidebar.write(
-    "Fundamental Rights, IPC Section 420, Cybercrime laws, Divorce procedure, Bail, FIR, Consumer rights, Property dispute, Labour rights"
+# --- Custom Header ---
+st.markdown(
+    """
+    <style>
+    .main-header {display: flex; align-items: center; gap: 12px; margin-bottom: 0.5em;}
+    .main-title {font-size:2em; font-weight:700; color:#2d3a4a;}
+    .disclaimer-box {background-color:#fff3cd; border-left:6px solid #ffecb5; padding:0.8em 1em; margin-bottom:1em; border-radius:6px;}
+    .chat-user {background: #e3f2fd; border-radius: 8px; padding: 0.7em 1em; margin-bottom: 0.5em; border: 1px solid #90caf9;}
+    .chat-assistant {background: #f1f8e9; border-radius: 8px; padding: 0.7em 1em; margin-bottom: 0.5em; border: 1px solid #aed581;}
+    .chat-label {font-weight:600; margin-right:0.5em;}
+    .sidebar-title {font-size:1.2em; font-weight:600; color:#2d3a4a; margin-bottom:0.5em;}
+    .sidebar-keywords {margin-top:2em; font-weight:600;}
+    .sidebar-keywords-list {color:#2d3a4a; font-size:0.98em;}
+    .mobile-note {text-align:center; color:#888; margin-top:2em;}
+    </style>
+    <div class='main-header'>
+        <span style='font-size:2.2em;'>⚖️</span>
+        <span class='main-title'>Indian Legal Law Chatbot</span>
+    </div>
+    """,
+    unsafe_allow_html=True
 )
 
-# Disclaimer
-st.markdown(DISCLAIMER)
+# Sidebar: Legal Domain Selection (with icons)
+st.sidebar.markdown(
+    "<div class='sidebar-title'>Select Legal Domain</div>", unsafe_allow_html=True)
+selected_domain = st.sidebar.selectbox(
+    "",
+    LEGAL_DOMAINS,
+    format_func=lambda d: f"⚖️ {d}" if d != "All Laws" else "📚 All Laws"
+)
+
+# Sidebar: Keyword Suggestions (Optional)
+st.sidebar.markdown(
+    "<div class='sidebar-keywords'>Keyword Suggestions:</div>", unsafe_allow_html=True)
+st.sidebar.markdown(
+    "<div class='sidebar-keywords-list'>Fundamental Rights, IPC Section 420, Cybercrime laws, Divorce procedure, Bail, FIR, Consumer rights, Property dispute, Labour rights</div>",
+    unsafe_allow_html=True
+)
+
+# Disclaimer (styled)
+st.markdown(
+    f"<div class='disclaimer-box'><span style='font-size:1.1em;'>{DISCLAIMER}</span></div>",
+    unsafe_allow_html=True
+)
 
 # --- Session State for Chat History and Input Key ---
 if "chat_history" not in st.session_state:
@@ -68,15 +101,21 @@ if "chat_history" not in st.session_state:
 if "input_key" not in st.session_state:
     st.session_state.input_key = 0
 
-# --- Chat History Panel ---
-st.subheader("Chat History")
+# --- Chat History Panel (styled) ---
+st.markdown("<div style='margin-bottom:0.5em; font-size:1.2em; font-weight:600;'>Chat History</div>", unsafe_allow_html=True)
 for msg in st.session_state.chat_history:
     if msg["role"] == "user":
-        st.markdown(f"**You:** {msg['content']}")
+        st.markdown(
+            f"<div class='chat-user'><span class='chat-label'>🧑‍💼 You:</span> {msg['content']}</div>",
+            unsafe_allow_html=True
+        )
     else:
-        st.markdown(f"**Legal Assistant:** {msg['content']}")
+        st.markdown(
+            f"<div class='chat-assistant'><span class='chat-label'>🤖 Legal Assistant:</span> {msg['content']}</div>",
+            unsafe_allow_html=True
+        )
 
-# --- User Input (auto-response on Enter, no button) ---
+# --- User Input (auto-response on Enter, no button, styled) ---
 def handle_input():
     user_input = st.session_state.user_input
     if user_input.strip():
@@ -90,7 +129,12 @@ st.text_input(
     "Ask your legal question:",
     key="user_input",
     on_change=handle_input,
+    label_visibility="visible",
+    placeholder="Type your legal question and press Enter..."
 )
 
-# --- Mobile Friendly Note ---
-st.caption("Powered by Gemini 2.0 Flash API (Google AI).")
+# --- Mobile Friendly Note (styled) ---
+st.markdown(
+    "<div class='mobile-note'>Powered by <b>Gemini 2.0 Flash API</b> (Google AI).</div>",
+    unsafe_allow_html=True
+)
